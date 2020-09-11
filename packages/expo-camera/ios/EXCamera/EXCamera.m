@@ -532,6 +532,41 @@ previewPhotoSampleBuffer:(CMSampleBufferRef)previewPhotoSampleBuffer
     bool shouldBeMuted = options[@"mute"] && [options[@"mute"] boolValue];
     [self updateSessionAudioIsMuted:shouldBeMuted];
 
+     if (options[@"desiredFps"]) {
+        AVCaptureDevice *device = [_videoCaptureDeviceInput device]
+        AVCaptureDeviceFormat *selectedFormat = nil;
+        int32_t maxWidth = 0;
+        AVFrameRateRange *frameRateRange = nil;
+
+        for (AVCaptureDeviceFormat *format in [device formats]) {
+          
+          for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges) {
+              
+              CMFormatDescriptionRef desc = format.formatDescription;
+              CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(desc);
+              int32_t width = dimensions.width;
+
+              if (range.minFrameRate <= desiredFPS && desiredFPS <= range.maxFrameRate && width >= maxWidth) {
+                  
+                  selectedFormat = format;
+                  frameRateRange = range;
+                  maxWidth = width;
+              }
+          }
+        }
+
+         if (selectedFormat) {
+        
+            if ([device lockForConfiguration:nil]) {
+                
+                NSLog(@"selected format:%@", selectedFormat);
+                device.activeFormat = selectedFormat;
+                device.activeVideoMinFrameDuration = CMTimeMake(1, (int32_t)desiredFPS);
+                device.activeVideoMaxFrameDuration = CMTimeMake(1, (int32_t)desiredFPS);
+                [device unlockForConfiguration];
+            }
+        }
+     }
     AVCaptureConnection *connection = [_movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
     // TODO: Add support for videoStabilizationMode (right now it is not only read, never written to)
     if (connection.isVideoStabilizationSupported == NO) {

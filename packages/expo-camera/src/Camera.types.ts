@@ -71,6 +71,7 @@ export type CameraRecordingOptions = {
   quality?: number | string;
   mute?: boolean;
   mirror?: boolean;
+  desiredFps?: number;
 };
 
 export type CameraCapturedPicture = {
